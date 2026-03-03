@@ -56,6 +56,12 @@ public class HomeController : Controller
         return View(category);
     }
 
+    public async Task<IActionResult> Events(CancellationToken ct)
+    {
+        var events = await _sheetsReader.FetchEventsAsync(ct);
+        return Json(events);
+    }
+
     public IActionResult Index()
     {
         var events = _sheetsReader.GetCachedEvents();

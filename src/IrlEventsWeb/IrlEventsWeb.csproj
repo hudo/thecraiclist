@@ -5,10 +5,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPublishable>true</IsPublishable>
+    <UserSecretsId>7ecbbc80-9428-4c36-8f22-75f87c66236e</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="33.1.0" />
   </ItemGroup>
 
 </Project>

@@ -33,10 +33,10 @@ public class EventsRefreshWorker : BackgroundService
         {
             if (ShouldRefresh())
             {
-                await RefreshCacheAsync(stoppingToken);
+                await RefreshCacheAsync(stoppingToken).ConfigureAwait(false);
             }
 
-            await Task.Delay(PollingInterval, stoppingToken);
+            await Task.Delay(PollingInterval, stoppingToken).ConfigureAwait(false);
         }
     }
 
@@ -48,8 +48,11 @@ public class EventsRefreshWorker : BackgroundService
     {
         try
         {
+            var token = new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token;
+            
             _logger.LogInformation("Fetching events from Google Sheets...");
-            var events = await _reader.FetchEventsAsync(ct);
+
+            var events = await _reader.FetchEventsAsync(token).ConfigureAwait(false);
 
             _cache.Set(CacheKey, events, new MemoryCacheEntryOptions
             {

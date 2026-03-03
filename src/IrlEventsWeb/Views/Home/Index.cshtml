@@ -32,16 +32,9 @@
                 @foreach (var evt in category.Events)
                 {
                     <article class="event-card" style="--accent: @category.Color">
-                        <div class="event-date">
-                            @{
-                                var parts = evt.StartDate.Split('/');
-                                var day = parts[0];
-                                var monthNum = int.Parse(parts[1]);
-                                var months = new[] { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-                                var monthName = months[monthNum];
-                            }
-                            <span class="date-day">@day</span>
-                            <span class="date-month">@monthName</span>
+                        <div class="event-date" title="@evt.StartDate.ToString("d")">
+                            <span class="date-day">@evt.StartDate.Day</span>
+                            <span class="date-month">@evt.StartDate.ToString("MMM")</span>
                         </div>
                         <div class="event-info">
                             <h3 class="event-title">@evt.Name</h3>

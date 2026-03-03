@@ -61,13 +61,13 @@
         main {
             max-width: 1100px;
             margin: 0 auto;
-            padding: 2rem 1.5rem 4rem;
+            padding: 1rem 1.5rem 4rem;
         }
 
         /* Hero */
         .hero {
             text-align: center;
-            padding: 3rem 1rem 2rem;
+            padding: 1rem 1rem 2rem;
         }
 
         .hero h2 {
@@ -278,6 +278,24 @@
             color: #fff;
         }
 
+        .data-source {
+            text-align: center;
+            padding: 1.5rem 2rem;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .data-source a {
+            color: var(--text);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            transition: color 0.2s;
+        }
+
+        .data-source a:hover {
+            color: #1abc9c;
+        }
+
         footer {
             text-align: center;
             padding: 2rem;
@@ -313,6 +331,9 @@
     <main>
         @RenderBody()
     </main>
+    <section class="data-source">
+        Data generously provided by <a href="https://docs.google.com/spreadsheets/d/1koOd6LfRzT54TmawJcuzJH0rbG218-1wsojIlx1zDtE" target="_blank" rel="noopener noreferrer">The Crackdown sheet</a>
+    </section>
     <footer>
         The Craic List &mdash; Your guide to what's on in Ireland
     </footer>
