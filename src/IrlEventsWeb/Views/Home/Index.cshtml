@@ -1,0 +1,59 @@
+@model IrlEventsWeb.Models.HomeViewModel
+@{
+    ViewData["Title"] = "Events";
+}
+
+<section class="hero">
+    <h2>Discover what's happening across Ireland</h2>
+    <p>Live music, festivals, theatre, exhibitions and more — all in one place.</p>
+</section>
+
+<nav class="category-nav">
+    @foreach (var category in Model!.Categories)
+    {
+        <a href="#@category.Name.ToLower()" class="category-chip" style="--chip-color: @category.Color">
+            <span class="chip-icon">@category.Icon</span>
+            <span>@category.Name</span>
+            <span class="chip-count">@category.TotalCount</span>
+        </a>
+    }
+</nav>
+
+<div class="categories">
+    @foreach (var category in Model.Categories)
+    {
+        <section id="@category.Name.ToLower()" class="category-section">
+            <div class="category-header" style="--accent: @category.Color">
+                <span class="category-icon">@category.Icon</span>
+                <h2><a href="@Url.RouteUrl("category", new { name = category.Name })" class="category-link" style="--accent: @category.Color">@category.Name</a></h2>
+                <span class="event-count">@category.TotalCount events</span>
+            </div>
+            <div class="events-grid">
+                @foreach (var evt in category.Events)
+                {
+                    <article class="event-card" style="--accent: @category.Color">
+                        <div class="event-date">
+                            @{
+                                var parts = evt.StartDate.Split('/');
+                                var day = parts[0];
+                                var monthNum = int.Parse(parts[1]);
+                                var months = new[] { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                                var monthName = months[monthNum];
+                            }
+                            <span class="date-day">@day</span>
+                            <span class="date-month">@monthName</span>
+                        </div>
+                        <div class="event-info">
+                            <h3 class="event-title">@evt.Name</h3>
+                            <p class="event-venue">📍 @evt.Venue</p>
+                        </div>
+                        <a href="@evt.Link" target="_blank" rel="noopener" class="event-link" title="More info">→</a>
+                    </article>
+                }
+            </div>
+            <a href="@Url.RouteUrl("category", new { name = category.Name })" class="view-all-link" style="--accent: @category.Color">
+                View all @category.TotalCount events →
+            </a>
+        </section>
+    }
+</div>

@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build src/)",
+      "Bash(dotnet restore tests/IrlEventsWeb.Tests/ --force)",
+      "Bash(dotnet test tests/IrlEventsWeb.Tests/)",
+      "Bash(dotnet build src/IrlEventsWeb.csproj)"
+    ]
+  }
+}

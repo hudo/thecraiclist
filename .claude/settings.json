@@ -1,0 +1,8 @@
+{
+  "plansDirectory": "./.claude/plans",
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build src/src.slnx)"
+    ]
+  }
+}

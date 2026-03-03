@@ -1,0 +1,41 @@
+@model IrlEventsWeb.Models.Category
+@{
+    ViewData["Title"] = Model!.Name;
+}
+
+<nav class="category-nav">
+    <a href="@Url.Action("Index", "Home")" class="category-chip" style="--chip-color: var(--text-muted)">
+        <span>← All Categories</span>
+    </a>
+</nav>
+
+<section class="category-section">
+    <div class="category-header" style="--accent: @Model.Color">
+        <span class="category-icon">@Model.Icon</span>
+        <h2>@Model.Name</h2>
+        <span class="event-count">@Model.TotalCount events</span>
+    </div>
+    <div class="events-grid">
+        @foreach (var evt in Model.Events)
+        {
+            <article class="event-card" style="--accent: @Model.Color">
+                <div class="event-date">
+                    @{
+                        var parts = evt.StartDate.Split('/');
+                        var day = parts[0];
+                        var monthNum = int.Parse(parts[1]);
+                        var months = new[] { "", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+                        var monthName = months[monthNum];
+                    }
+                    <span class="date-day">@day</span>
+                    <span class="date-month">@monthName</span>
+                </div>
+                <div class="event-info">
+                    <h3 class="event-title">@evt.Name</h3>
+                    <p class="event-venue">📍 @evt.Venue</p>
+                </div>
+                <a href="@evt.Link" target="_blank" rel="noopener" class="event-link" title="More info">→</a>
+            </article>
+        }
+    </div>
+</section>

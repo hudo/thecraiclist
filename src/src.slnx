@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="IrlEventsWeb\IrlEventsWeb.csproj" />
+  <Project Path="IrlEventsWeb.Tests\IrlEventsWeb.Tests.csproj" />
+</Solution>
