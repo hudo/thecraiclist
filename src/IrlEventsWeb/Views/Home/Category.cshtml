@@ -1,6 +1,17 @@
 @model IrlEventsWeb.Models.Category
 @{
     ViewData["Title"] = Model!.Name;
+
+    var monthIcons = new Dictionary<int, string>
+        {
+            {1, "❄️"}, {2, "💨"}, {3, "🌱"}, {4, "🌸"},
+            {5, "☀️"}, {6, "🌞"}, {7, "🏖️"}, {8, "🌻"},
+            {9, "🍂"}, {10, "🎃"}, {11, "🍁"}, {12, "⛄"}
+        };
+
+    var eventsByMonth = Model.Events
+        .GroupBy(e => new { e.StartDate.Year, e.StartDate.Month })
+        .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month);
 }
 
 <nav class="category-nav">
@@ -9,26 +20,59 @@
     </a>
 </nav>
 
-<section class="category-section">
-    <div class="category-header" style="--accent: @Model.Color">
-        <span class="category-icon">@Model.Icon</span>
-        <h2>@Model.Name</h2>
-        <span class="event-count">@Model.TotalCount events</span>
-    </div>
-    <div class="events-grid">
-        @foreach (var evt in Model.Events)
+<div class="category-layout">
+    <section class="category-section">
+        <div class="category-header" style="--accent: @Model.Color">
+            <span class="category-icon">@Model.Icon</span>
+            <h2>@Model.Name</h2>
+            <span class="event-count">@Model.TotalCount events</span>
+        </div>
+        @foreach (var month in eventsByMonth)
         {
-            <article class="event-card" style="--accent: @Model.Color">
-                <div class="event-date" title="@evt.StartDate.ToString("d")">
-                    <span class="date-day">@evt.StartDate.Day</span>
-                    <span class="date-month">@evt.StartDate.ToString("MMM")</span>
+            var monthName = new DateTime(month.Key.Year, month.Key.Month, 1).ToString("MMMM yyyy");
+            var monthId = new DateTime(month.Key.Year, month.Key.Month, 1).ToString("yyyy-MM");
+            var icon = monthIcons[month.Key.Month];
+
+            <div class="month-section" id="month-@monthId">
+                <h3 class="month-header" style="--accent: @Model.Color">
+                    <span class="month-icon">@icon</span>
+                    @monthName
+                    <span class="month-count">@month.Count() events</span>
+                </h3>
+                <div class="events-grid">
+                    @foreach (var evt in month.OrderBy(e => e.StartDate))
+                    {
+                        <article class="event-card" style="--accent: @Model.Color">
+                            <div class="event-date" title="@evt.StartDate.ToString("d")">
+                                <span class="date-day">@evt.StartDate.Day</span>
+                                <span class="date-month">@evt.StartDate.ToString("MMM")</span>
+                            </div>
+                            <div class="event-info">
+                                <h3 class="event-title">@evt.Name</h3>
+                                <p class="event-venue">📍 @evt.Venue</p>
+                            </div>
+                            <a href="@evt.Link" target="_blank" rel="noopener" class="event-link" title="More info">→</a>
+                        </article>
+                    }
                 </div>
-                <div class="event-info">
-                    <h3 class="event-title">@evt.Name</h3>
-                    <p class="event-venue">📍 @evt.Venue</p>
-                </div>
-                <a href="@evt.Link" target="_blank" rel="noopener" class="event-link" title="More info">→</a>
-            </article>
+            </div>
         }
-    </div>
-</section>
+    </section>
+
+    <aside class="month-nav">
+        <nav class="month-nav-inner">
+            <span class="month-nav-title">Months</span>
+            @foreach (var month in eventsByMonth)
+            {
+                var monthDate = new DateTime(month.Key.Year, month.Key.Month, 1);
+                var monthId = monthDate.ToString("yyyy-MM");
+                var shortName = monthDate.ToString("MMM");
+                var icon = monthIcons[month.Key.Month];
+                <a href="#month-@monthId" class="month-nav-link" style="--accent: @Model.Color">
+                    <span class="month-nav-icon">@icon</span>
+                    <span>@shortName @month.Key.Year</span>
+                </a>
+            }
+        </nav>
+    </aside>
+</div>

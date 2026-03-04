@@ -7,7 +7,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 IrlEventsReader is a .NET 10.0 application for reading and displaying Irish cultural events sourced from a Google Sheets spreadsheet. It has two components:
 
 - **`src/`** — ASP.NET Core web API (currently a minimal starter template). Production application folder
-- **`pocs/`** - proof of concept and playground non-production code. Ignore this folder unless requested explicitely. 
 
 ## Build & Run Commands
 

@@ -10,7 +10,7 @@ namespace IrlEventsWeb.Services;
 public interface IGoogleSheetsReader
 {
     Task<List<Event>> FetchEventsAsync(CancellationToken ct = default);
-    List<Event> GetCachedEvents();
+    Task<List<Event>> GetCachedEventsAsync();
 }
 
 public class GoogleSheetsReader : IGoogleSheetsReader
@@ -18,10 +18,15 @@ public class GoogleSheetsReader : IGoogleSheetsReader
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IMemoryCache _cache;
     private readonly ILogger<GoogleSheetsReader> _logger;
+    private readonly IWebHostEnvironment _environment;
 
     private readonly string _spreadsheetId;
     private readonly int _sheetGid;
     private readonly string _apiKey;
+    private readonly TimeSpan _httpTimeout;
+
+    private static readonly string FallbackFilePath = Path.Combine(AppContext.BaseDirectory, "sheets-fallback.json");
+    private static readonly TimeSpan FallbackMaxAge = TimeSpan.FromDays(2);
 
     // Column header names from the spreadsheet mapped to Event properties
     private static readonly Dictionary<string, string> HeaderToProperty = new(StringComparer.OrdinalIgnoreCase)
@@ -36,27 +41,65 @@ public class GoogleSheetsReader : IGoogleSheetsReader
     public GoogleSheetsReader(IHttpClientFactory httpClientFactory,
         IMemoryCache cache,
         IConfiguration configuration,
-        ILogger<GoogleSheetsReader> logger)
+        ILogger<GoogleSheetsReader> logger,
+        IWebHostEnvironment environment)
     {
         _httpClientFactory = httpClientFactory;
         _cache = cache;
         _logger = logger;
+        _environment = environment;
 
         _spreadsheetId = configuration["GoogleSheets:SheetId"]
             ?? throw new InvalidOperationException("GoogleSheets:SheetId configuration is missing.");
         _sheetGid = int.Parse(configuration["GoogleSheets:SheetGid"] ?? "1408471462");
         _apiKey = Environment.GetEnvironmentVariable("GOOGLE_API_KEY")
             ?? throw new InvalidOperationException("GOOGLE_API_KEY environment variable is not set.");
+
+        _httpTimeout = _environment.IsDevelopment() ? TimeSpan.FromSeconds(3) : TimeSpan.FromSeconds(15);
     }
 
-    public List<Event> GetCachedEvents() =>
-        _cache.TryGetValue(EventsRefreshWorker.CacheKey, out List<Event>? events) && events is not null
-            ? events
-            : [];
+    public async Task<List<Event>> GetCachedEventsAsync()
+    {
+        if (_cache.TryGetValue(EventsRefreshWorker.CacheKey, out List<Event>? events) && events is not null)
+            return events;
+
+        return await ReadFallbackFileAsync();
+    }
 
     public async Task<List<Event>> FetchEventsAsync(CancellationToken ct = default)
     {
+        try
+        {
+            var events = await FetchEventsFromApiAsync(ct);
+
+            // Persist to local file for fallback
+            try
+            {
+                if (events.Count > 0)
+                {
+                    var json = JsonSerializer.Serialize(events);
+                    await File.WriteAllTextAsync(FallbackFilePath, json, ct);
+                    _logger.LogInformation("Saved {Count} events to fallback file.", events.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to write fallback file.");
+            }
+
+            return events;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogWarning(ex, "Google Sheets API call failed. Attempting fallback file.");
+            return await ReadFallbackFileAsync();
+        }
+    }
+
+    private async Task<List<Event>> FetchEventsFromApiAsync(CancellationToken ct)
+    {
         using var httpClient = _httpClientFactory.CreateClient();
+        httpClient.Timeout = _httpTimeout;
         httpClient.DefaultRequestHeaders.Referrer = new Uri("http://localhost");
         httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("TheCraicList/1.0");
         httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -66,7 +109,7 @@ public class GoogleSheetsReader : IGoogleSheetsReader
 
         // Fetch all values from the sheet
         _logger.LogInformation("Fetching values from sheet '{SheetName}' (GID: {Gid})...", sheetName, _sheetGid);
-        
+
         var valuesUrl = $"https://sheets.googleapis.com/v4/spreadsheets/{_spreadsheetId}/values/{Uri.EscapeDataString(sheetName)}?key={_apiKey}";
         var response = await httpClient.GetAsync(valuesUrl, ct);
         response.EnsureSuccessStatusCode();
@@ -114,6 +157,27 @@ public class GoogleSheetsReader : IGoogleSheetsReader
         }
 
         _logger.LogInformation("Parsed {Count} events from Google Sheets API.", events.Count);
+        return events;
+    }
+
+    private async Task<List<Event>> ReadFallbackFileAsync()
+    {
+        if (!File.Exists(FallbackFilePath))
+        {
+            _logger.LogWarning("No fallback file found at {Path}.", FallbackFilePath);
+            return [];
+        }
+
+        var fileAge = DateTime.UtcNow - File.GetLastWriteTimeUtc(FallbackFilePath);
+        if (fileAge > FallbackMaxAge)
+        {
+            _logger.LogWarning("Fallback file is {Age} old (max {Max}). Ignoring stale data.", fileAge, FallbackMaxAge);
+            return [];
+        }
+
+        var json = await File.ReadAllTextAsync(FallbackFilePath);
+        var events = JsonSerializer.Deserialize<List<Event>>(json) ?? [];
+        _logger.LogInformation("Loaded {Count} events from fallback file ({Age} old).", events.Count, fileAge);
         return events;
     }
 

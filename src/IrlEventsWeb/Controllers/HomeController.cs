@@ -28,12 +28,12 @@ public class HomeController : Controller
         _sheetsReader = sheetsReader;
     }
 
-    public IActionResult Category(string name)
+    public async Task<IActionResult> Category(string name)
     {
         if (string.IsNullOrEmpty(name))
             return RedirectToAction(nameof(Index));
 
-        var events = _sheetsReader.GetCachedEvents();
+        var events = await _sheetsReader.GetCachedEventsAsync();
 
         var group = events
             .Where(e => e.Category.Equals(name, StringComparison.OrdinalIgnoreCase))
@@ -62,9 +62,9 @@ public class HomeController : Controller
         return Json(events);
     }
 
-    public IActionResult Index()
+    public async Task<IActionResult> Index()
     {
-        var events = _sheetsReader.GetCachedEvents();
+        var events = await _sheetsReader.GetCachedEventsAsync();
 
         var categories = events
             .GroupBy(e => e.Category, StringComparer.OrdinalIgnoreCase)

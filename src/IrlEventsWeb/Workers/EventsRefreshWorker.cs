@@ -14,17 +14,20 @@ public class EventsRefreshWorker : BackgroundService
     private readonly IMemoryCache _cache;
     private readonly IGoogleSheetsReader _reader;
     private readonly ILogger<EventsRefreshWorker> _logger;
+    private readonly IHostEnvironment _env;
 
     private DateTimeOffset _cacheExpiresAt = DateTimeOffset.MinValue;
 
     public EventsRefreshWorker(
         IMemoryCache cache,
         IGoogleSheetsReader reader,
-        ILogger<EventsRefreshWorker> logger)
+        ILogger<EventsRefreshWorker> logger,
+        IHostEnvironment env)
     {
         _cache = cache;
         _reader = reader;
         _logger = logger;
+        _env = env;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -33,10 +36,10 @@ public class EventsRefreshWorker : BackgroundService
         {
             if (ShouldRefresh())
             {
-                await RefreshCacheAsync(stoppingToken).ConfigureAwait(false);
+                await RefreshCacheAsync(stoppingToken);
             }
 
-            await Task.Delay(PollingInterval, stoppingToken).ConfigureAwait(false);
+            await Task.Delay(PollingInterval, stoppingToken);
         }
     }
 
@@ -48,11 +51,12 @@ public class EventsRefreshWorker : BackgroundService
     {
         try
         {
-            var token = new CancellationTokenSource(TimeSpan.FromMinutes(2)).Token;
+            var timeout = _env.IsDevelopment() ? TimeSpan.FromSeconds(5) : TimeSpan.FromMinutes(1);
+            var token = new CancellationTokenSource(timeout).Token;
             
             _logger.LogInformation("Fetching events from Google Sheets...");
 
-            var events = await _reader.FetchEventsAsync(token).ConfigureAwait(false);
+            var events = await _reader.FetchEventsAsync(token);
 
             _cache.Set(CacheKey, events, new MemoryCacheEntryOptions
             {
