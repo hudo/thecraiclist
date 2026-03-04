@@ -5,7 +5,8 @@
       "Bash(dotnet restore tests/IrlEventsWeb.Tests/ --force)",
       "Bash(dotnet test tests/IrlEventsWeb.Tests/)",
       "Bash(dotnet build src/IrlEventsWeb.csproj)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Skill(test)"
     ]
   }
 }

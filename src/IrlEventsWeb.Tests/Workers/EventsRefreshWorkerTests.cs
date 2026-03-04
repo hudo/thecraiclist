@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
@@ -13,16 +14,17 @@ public class EventsRefreshWorkerTests
     private readonly Mock<IGoogleSheetsReader> _readerMock = new();
     private readonly IMemoryCache _cache = new MemoryCache(new MemoryCacheOptions());
     private readonly NullLogger<EventsRefreshWorker> _logger = new();
+    private readonly Mock<IHostEnvironment> _envMock = new();
 
     // Exposes the protected ExecuteAsync for direct testing
     private sealed class TestableWorker(
-        IMemoryCache cache, IGoogleSheetsReader reader, NullLogger<EventsRefreshWorker> logger)
-        : EventsRefreshWorker(cache, reader, logger)
+        IMemoryCache cache, IGoogleSheetsReader reader, NullLogger<EventsRefreshWorker> logger, IHostEnvironment env)
+        : EventsRefreshWorker(cache, reader, logger, env)
     {
         public new Task ExecuteAsync(CancellationToken ct) => base.ExecuteAsync(ct);
     }
 
-    private TestableWorker CreateWorker() => new(_cache, _readerMock.Object, _logger);
+    private TestableWorker CreateWorker() => new(_cache, _readerMock.Object, _logger, _envMock.Object);
 
     [Fact]
     public async Task ExecuteAsync_OnFirstRun_FetchesEventsAndPopulatesCache()
