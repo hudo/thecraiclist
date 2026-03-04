@@ -36,6 +36,7 @@ public class HomeController : Controller
         var events = await _sheetsReader.GetCachedEventsAsync();
 
         var group = events
+            .Where(x => x.StartDate > DateTime.UtcNow.AddDays(-7)) // Show only upcoming and recent events
             .Where(e => e.Category.Equals(name, StringComparison.OrdinalIgnoreCase))
             .OrderBy(e => e.StartDate)
             .ToList();
@@ -50,7 +51,7 @@ public class HomeController : Controller
             Icon = icon,
             Color = color,
             TotalCount = group.Count,
-            Events = group.Take(150).ToList(),
+            Events = group.Take(200).ToList(),
         };
 
         return View(category);
@@ -67,6 +68,7 @@ public class HomeController : Controller
         var events = await _sheetsReader.GetCachedEventsAsync();
 
         var categories = events
+            .Where(x => x.StartDate > DateTime.UtcNow.AddDays(-7)) // Show only upcoming and recent events
             .GroupBy(e => e.Category, StringComparer.OrdinalIgnoreCase)
             .Select(g =>
             {
@@ -74,7 +76,7 @@ public class HomeController : Controller
                 var ordered = g.OrderBy(x => x.StartDate).ToList();
                 return new Category
                 {
-                    Name = char.ToUpper(g.Key[0]) + g.Key[1..],
+                    Name = char.ToUpper(g.Key[0]) + g.Key[1..].ToLower(),
                     Icon = icon,
                     Color = color,
                     TotalCount = ordered.Count,

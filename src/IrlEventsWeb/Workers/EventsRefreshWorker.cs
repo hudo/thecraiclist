@@ -51,20 +51,27 @@ public class EventsRefreshWorker : BackgroundService
     {
         try
         {
-            var timeout = _env.IsDevelopment() ? TimeSpan.FromSeconds(5) : TimeSpan.FromMinutes(1);
+            var timeout = _env.IsDevelopment() ? TimeSpan.FromSeconds(10) : TimeSpan.FromMinutes(1);
             var token = new CancellationTokenSource(timeout).Token;
             
             _logger.LogInformation("Fetching events from Google Sheets...");
 
             var events = await _reader.FetchEventsAsync(token);
 
-            _cache.Set(CacheKey, events, new MemoryCacheEntryOptions
+            if (events.Count > 0)
             {
-                AbsoluteExpirationRelativeToNow = CacheExpiration,
-            });
+                _cache.Set(CacheKey, events, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = CacheExpiration,
+                });
 
-            _cacheExpiresAt = DateTimeOffset.UtcNow + CacheExpiration;
-            _logger.LogInformation("Cached {Count} events. Cache expires at {ExpiresAt:u}.", events.Count, _cacheExpiresAt);
+                _cacheExpiresAt = DateTimeOffset.UtcNow + CacheExpiration;
+                _logger.LogInformation("Cached {Count} events. Cache expires at {ExpiresAt:u}.", events.Count, _cacheExpiresAt);
+            }
+            else
+            {
+                _logger.LogWarning("No events fetched from Google Sheets. Cache not updated.");
+            }
         }
         catch (Exception ex)
         {

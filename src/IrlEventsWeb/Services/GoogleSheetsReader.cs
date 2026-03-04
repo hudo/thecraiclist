@@ -92,7 +92,7 @@ public class GoogleSheetsReader : IGoogleSheetsReader
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             _logger.LogWarning(ex, "Google Sheets API call failed. Attempting fallback file.");
-            return await ReadFallbackFileAsync();
+            return [];
         }
     }
 
